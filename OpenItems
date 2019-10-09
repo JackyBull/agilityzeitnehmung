@@ -1,0 +1,5 @@
+[ ] In Nano board programm eine Möglichkeit implementieren, einen eigenen Namen zu vergeben, der dann in der Qt Anwendung angezeigt werden kann. Zur besseren unterscheidung der Seriellen Ports
+[x] Abbruch the Worker threads einbauen
+[x] Serielle Daten einlesen
+[x] eingelesene serielle daten unterscheiden und auf basis der Daten bestimmte SIGNALs aussenden zum Starten und Stoppen des Timers.
+[ ] Dropdown-Auswahlfeld hinzufügen um einen bestimmten Ports auszuwählen. Vor der auswahl kann keine Zeitnehmung gestartet werden.

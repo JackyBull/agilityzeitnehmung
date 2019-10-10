@@ -14,12 +14,17 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    worker.cpp
+    worker.cpp \
+    about.cpp
 
 HEADERS  += mainwindow.h \
-    worker.h
+    worker.h \
+    about.h
 
-FORMS    += mainwindow.ui
+#LIBS += libQt5SerialPort.a
+
+FORMS    += mainwindow.ui \
+    about.ui
 
 CONFIG += serialport
 

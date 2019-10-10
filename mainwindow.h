@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "worker.h"
+#include "about.h"
 #include <QMainWindow>
 #include <QSerialPortInfo>
 #include <QTime>
@@ -23,9 +24,17 @@ public:
 
     QThread* thread;
     Worker* worker;
+    void show();
+
+
+
+public slots:
+    void reinitWorkerThread();
+    void openAboutWidget();
+
 
 private slots:
-
+    void fillSerialPorts();
     void showTime();
     void showStopClock();
 
@@ -45,6 +54,12 @@ private slots:
 
     void on_btn_switchMode_clicked();
 
+    void on_action_ber_triggered();
+
+    void on_actionBeenden_triggered();
+
+    void on_actionNeu_initialisieren_triggered();
+
 private:
     Ui::MainWindow *ui;
     QTime t;
@@ -52,8 +67,9 @@ private:
     QSerialPortInfo selectedInfo;
     bool automatedMode = true;
     bool lbswitched = false;
+    About *aboutWidget;
 
-    void fillSerialPorts();
+
     QString getPortRealName(QSerialPortInfo info);
     void setAutomatedMode();
     void setManualMode();

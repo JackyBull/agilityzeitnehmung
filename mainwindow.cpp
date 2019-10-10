@@ -18,7 +18,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     QTimer *timer = new QTimer(this);
     connect(timer,SIGNAL(timeout()), this, SLOT(showTime()));
-    timer->start();
+    timer->start(1000);
     t = QTime(0,0,0,0);
     QString timer_text = t.toString("mm:ss,z");
     ui->timer->setText(timer_text);
@@ -26,14 +26,30 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(stopwatchtimer,SIGNAL(timeout()),this,SLOT(showStopClock()));
     ui->lbl_LBStatus->setText("Standard: 1=Start, 2=Ziel");
     ui->btn_toggleLB->setDisabled(true);
-    this->fillSerialPorts();
+    setAutomatedMode();
     ui->statusBar->setStyleSheet("color: red; font-weight: bold");
     ui->statusBar->showMessage("Bitte Anschluss auswählen und bestätigen");
-    setAutomatedMode();
+
+
+
+}
+
+void MainWindow::show()
+{
+   QMainWindow::show();
+   QApplication::processEvents();
+   emit fillSerialPorts();
 }
 
 void MainWindow::fillSerialPorts(){
+    int cnt = ui->comboBox->count();
+    if(cnt>1){
+        for(int i=1;i<cnt;i++){
+            ui->comboBox->removeItem(1);
+        }
+    }
     foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
+        qDebug() << "get name of " << info.portName();
         QString realName = getPortRealName(info);
         ui->comboBox->addItem(realName + " (" +info.portName() +")");
     }
@@ -51,27 +67,29 @@ QString MainWindow::getPortRealName(QSerialPortInfo portInfo){
 
     if (serial.open(QIODevice::ReadWrite)){
         QByteArray way;
-        QString str("WAY");
-        way = str.toUtf8();
-
-        serial.write(way);
-        //serial.flush();
-        serial.waitForReadyRead(1000);
+        serial.waitForReadyRead(300);
 
         static QByteArray byteArray;
         byteArray = serial.readAll();
 
-        if(!QString(byteArray).contains("\n")){
-            return unknown;
-        }else{
-            QString data = QString(byteArray).remove("\r").remove("\n");
-            if(data.length()>0 ){
-                qDebug() << data;
-                if(data=="OeSAZ");
+        QString str("WAY");
+        qDebug() << "write 'WAY' to serial";
+        way = str.toUtf8();
+        serial.write(way);
+        serial.flush();
+        qDebug() << "flushed serial";
+        serial.waitForReadyRead(300);
+
+        byteArray = serial.readAll();
+        qDebug() << byteArray;
+        QString data = QString(byteArray).remove("\r").remove("\n");
+        if(data.length()>0 ){
+            qDebug() << data;
+            if(data=="OeSAZ"){
                 return "ÖGV Salzburg Agility Zeitnehmung";
             }
-        return unknown;
         }
+
     }
     return unknown;
 }
@@ -83,7 +101,7 @@ void MainWindow::showTime()
     if ((time.second() %2 ) == 0)
     {
         time_text[2] = ' ';
-        time_text[5] = ' ';
+
     }
 
     ui->Digital_clock->setText(time_text);
@@ -163,7 +181,6 @@ void MainWindow::on_btn_startWorkerThread_clicked()
     connect(thread, SIGNAL (started()), worker, SLOT (process()));
     connect(thread, SIGNAL (finished()),worker, SLOT (onAbort()));
     connect(worker, SIGNAL (abort()), worker, SLOT (onAbort()));
-    connect(thread, SIGNAL (finished()), thread, SLOT (deleteLater()));
     connect(worker, SIGNAL(startTiming()), this, SLOT (startTiming()));
     connect(worker, SIGNAL(stopTiming()), this, SLOT (stopTiming()));
     thread->start();
@@ -227,5 +244,39 @@ void MainWindow::setAutomatedMode(){
     ui->comboBox->setDisabled(false);
 
     emit on_btn_startWorkerThread_clicked();
+
+}
+
+
+void MainWindow::reinitWorkerThread(){
+    qDebug("Call Stop Worker Thread");
+    emit worker->onAbort();
+    ui->btn_toggleLB->setDisabled(true);
+    ui->statusBar->setStyleSheet("color: red; font-weight: bold");
+    ui->statusBar->showMessage("Bitte Anschluss auswählen und erneut bestätigen");
+
+}
+
+void MainWindow::openAboutWidget(){
+    aboutWidget = new About();
+    aboutWidget->show();
+}
+
+void MainWindow::on_action_ber_triggered()
+{
+    aboutWidget = new About();
+    aboutWidget->show();
+
+}
+
+void MainWindow::on_actionBeenden_triggered()
+{
+    this->close();
+}
+
+void MainWindow::on_actionNeu_initialisieren_triggered()
+{
+    fillSerialPorts();
+    reinitWorkerThread();
 
 }

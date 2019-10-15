@@ -29,17 +29,14 @@ MainWindow::MainWindow(QWidget *parent) :
     setAutomatedMode();
     ui->statusBar->setStyleSheet("color: red; font-weight: bold");
     ui->statusBar->showMessage("Bitte Anschluss auswählen und bestätigen");
-
-
+    serial = new QSerialPort();
+    this->thread = new QThread();
+    this->worker = new Worker();
+    ui->comboBox->setDisabled(true);
+    ui->btn_startWorkerThread->setDisabled(true);
 
 }
 
-void MainWindow::show()
-{
-   QMainWindow::show();
-   QApplication::processEvents();
-   emit fillSerialPorts();
-}
 
 void MainWindow::fillSerialPorts(){
     int cnt = ui->comboBox->count();
@@ -50,48 +47,12 @@ void MainWindow::fillSerialPorts(){
     }
     foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
         qDebug() << "get name of " << info.portName();
-        QString realName = getPortRealName(info);
+        QString realName = worker->getPortRealName(info);
         ui->comboBox->addItem(realName + " (" +info.portName() +")");
     }
-}
 
-QString MainWindow::getPortRealName(QSerialPortInfo portInfo){
-    QSerialPort serial;
-    QString unknown( "unbekannt");
-    serial.setPort(portInfo);
-    serial.setBaudRate(QSerialPort::Baud9600);
-    serial.setDataBits(QSerialPort::Data8);
-    serial.setParity(QSerialPort::NoParity);
-    serial.setStopBits(QSerialPort::OneStop);
-    serial.setFlowControl(QSerialPort::NoFlowControl);
-
-    if (serial.open(QIODevice::ReadWrite)){
-        QByteArray way;
-        serial.waitForReadyRead(300);
-
-        static QByteArray byteArray;
-        byteArray = serial.readAll();
-
-        QString str("WAY");
-        qDebug() << "write 'WAY' to serial";
-        way = str.toUtf8();
-        serial.write(way);
-        serial.flush();
-        qDebug() << "flushed serial";
-        serial.waitForReadyRead(300);
-
-        byteArray = serial.readAll();
-        qDebug() << byteArray;
-        QString data = QString(byteArray).remove("\r").remove("\n");
-        if(data.length()>0 ){
-            qDebug() << data;
-            if(data=="OeSAZ"){
-                return "ÖGV Salzburg Agility Zeitnehmung";
-            }
-        }
-
-    }
-    return unknown;
+    ui->comboBox->setDisabled(false);
+    ui->btn_startWorkerThread->setDisabled(false);
 }
 
 void MainWindow::showTime()
@@ -111,7 +72,6 @@ void MainWindow::showTime()
 void MainWindow::showStopClock()
 {
     t = t.addMSecs(10);
-    //qDebug() << t; //.toString("mm:ss,z")
     QString timer_text = t.toString("mm:ss,z");
     ui->timer->setText(timer_text);
 }
@@ -152,8 +112,7 @@ void MainWindow::on_pushButton_clicked()
 void MainWindow::on_btn_startWorkerThread_clicked()
 {
     QString portName = "ttyUSB0";
-    this->thread = new QThread();
-    this->worker = new Worker();
+
     if(this->lbswitched){
         worker->toggleLbSwitched();
     }
@@ -190,14 +149,6 @@ void MainWindow::on_btn_startWorkerThread_clicked()
 
 
 
-void MainWindow::on_btn_stopWorkThread_clicked()
-{
-    qDebug("Call Stop Worker Thread");
-    emit worker->onAbort();
-    ui->btn_toggleLB->setDisabled(true);
-    ui->statusBar->setStyleSheet("color: red; font-weight: bold");
-    ui->statusBar->showMessage("Bitte Anschluss auswählen und erneut bestätigen");
-}
 
 void MainWindow::on_btn_toggleLB_clicked()
 {
@@ -276,7 +227,13 @@ void MainWindow::on_actionBeenden_triggered()
 
 void MainWindow::on_actionNeu_initialisieren_triggered()
 {
-    fillSerialPorts();
+    emit fillSerialPorts();
     reinitWorkerThread();
 
+
+}
+
+void MainWindow::on_pushButton_2_clicked()
+{
+    emit fillSerialPorts();
 }

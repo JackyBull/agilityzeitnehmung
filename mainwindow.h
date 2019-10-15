@@ -4,6 +4,7 @@
 #include "worker.h"
 #include "about.h"
 #include <QMainWindow>
+#include <QSerialPort>
 #include <QSerialPortInfo>
 #include <QTime>
 #include <QTimer>
@@ -24,9 +25,6 @@ public:
 
     QThread* thread;
     Worker* worker;
-    void show();
-
-
 
 public slots:
     void reinitWorkerThread();
@@ -46,8 +44,6 @@ private slots:
 
     void on_btn_startWorkerThread_clicked();
 
-    void on_btn_stopWorkThread_clicked();
-
     void on_btn_toggleLB_clicked();
     void startTiming();
     void stopTiming();
@@ -60,6 +56,8 @@ private slots:
 
     void on_actionNeu_initialisieren_triggered();
 
+    void on_pushButton_2_clicked();
+
 private:
     Ui::MainWindow *ui;
     QTime t;
@@ -68,9 +66,9 @@ private:
     bool automatedMode = true;
     bool lbswitched = false;
     About *aboutWidget;
+    QSerialPort* serial;
 
 
-    QString getPortRealName(QSerialPortInfo info);
     void setAutomatedMode();
     void setManualMode();
 
